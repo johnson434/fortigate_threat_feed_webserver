@@ -7,31 +7,40 @@ from fastapi.responses import FileResponse
 
 app = FastAPI()
 
-# 환경 변수 설정: 파일 저장 경로는 유동적으로 바꿀 수 있게 유지합니다.
+# 환경 변수 설정
 BASE_DIR = os.getenv("BASE_DIR", "res")
+# 새로운 환경 변수 'env'를 읽어옵니다 (기본값은 None)
+ENV_MODE = os.getenv("env")
 
 
 def get_latest_file():
-    """res 폴더 내에서 가장 최근에 생성/수정된 .txt 파일을 반환합니다."""
+    """폴더 내에서 가장 최근의 .txt 파일을 반환합니다."""
     files = sorted(glob.glob(os.path.join(BASE_DIR, "*.txt")))
     return files[-1] if files else None
 
 
 @app.on_event("startup")
 async def startup_event():
-    """서버 시작 시 데이터 디렉터리가 있는지 확인하고 없으면 종료합니다."""
     if not os.path.isdir(BASE_DIR):
-        print(f"\n" + "=" * 50)
-        print(f" [CRITICAL ERROR] Directory '{BASE_DIR}' not found.")
-        print(f" Path: {os.path.abspath(BASE_DIR)}")
-        print(f" Please mount the volume properly.")
-        print("=" * 50 + "\n")
+        print(f"\n [CRITICAL ERROR] Directory '{BASE_DIR}' not found.")
         sys.exit(1)
 
 
 @app.get("/")
-async def get_latest_server_list():
-    """가장 최신 파일 내용을 반환합니다."""
+async def get_server_list():
+    # 1. 만약 환경 변수 env가 설정되어 있다면 (예: env=test)
+    if ENV_MODE:
+        target_file = os.path.join(BASE_DIR, f"{ENV_MODE}.txt")
+        if os.path.exists(target_file):
+            return FileResponse(
+                path=target_file, filename=f"{ENV_MODE}.txt", media_type="text/plain"
+            )
+        # 설정했는데 파일이 없으면 에러를 띄웁니다.
+        raise HTTPException(
+            status_code=404, detail=f"Environment file {ENV_MODE}.txt not found."
+        )
+
+    # 2. env 변수가 없으면 기존처럼 가장 최신 파일을 찾습니다.
     latest_file = get_latest_file()
     if latest_file and os.path.exists(latest_file):
         return FileResponse(
@@ -42,16 +51,6 @@ async def get_latest_server_list():
     raise HTTPException(status_code=404, detail="No txt files found.")
 
 
-@app.get("/{date_str}")
-async def get_server_list_by_date(date_str: str):
-    """특정 날짜(파일명)의 파일을 반환합니다. (예: /2026-02-25)"""
-    file_path = os.path.join(BASE_DIR, f"{date_str}.txt")
-    if os.path.exists(file_path):
-        return FileResponse(
-            path=file_path, filename=f"{date_str}.txt", media_type="text/plain"
-        )
-    raise HTTPException(status_code=404, detail=f"File {date_str}.txt not found.")
-
-
+# ... (이하 동일)
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=80)
