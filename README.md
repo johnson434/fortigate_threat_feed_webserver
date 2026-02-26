@@ -9,7 +9,7 @@ docker pull jonathan434/threat-feed-api
 
 ### 
 ``` bash
-docker run -d --name threat-prod -p 외부포트:80
+docker run -d --name threat-prod -p 외부포트:80 jonathan434/threat-feed-api
 ```
 
 ## 2. API
