@@ -22,7 +22,9 @@ COPY main.py .
 # 코드에서 체크하는 'res' 폴더를 미리 만들어 둡니다.
 RUN mkdir -p res
 
-# 7. 내부 포트 개방 (문서화 용도)
+# 7. res 파일 복사
+COPY res/test.txt res/test.txt 
+
 EXPOSE 80
 
 # 8. 서버 실행
