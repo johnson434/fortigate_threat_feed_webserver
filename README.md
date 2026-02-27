@@ -1,16 +1,68 @@
-# Threat Feed Web Server
+# 🛡️ Threat Feed Web Server
 
-## 0. 컨테이너 이미지 Pull
-``` bash
-docker pull jonathan434/threat-feed-api
+**FortiGate Threat Feed 테스트를 위한 경량 IoC 배포 서버**
+
+## 📌 프로젝트 개요
+* **테스트 최적화**: FortiGate의 **External Fabric Connector** 연동 및 정책 차단 동작을 검증하기 위한 웹서버
+* **Docker 기반 실행**: 복잡한 설정 없이 컨테이너 환경에서 즉시 실행 가능
+* **데이터 내장 빌드**: `res/` 경로의 파일을 수정한 후 이미지를 빌드하면, 해당 데이터가 내장된 상태로 웹서버가 실행
+
+---
+
+## 📂 디렉터리 구조
+
+```text
+.
+├── main.py                # FastAPI 기반 피드 서버 실행 로직
+├── Dockerfile             # 컨테이너 이미지 빌드 설정 (데이터 내장)
+├── README.md              # 프로젝트 개요 및 가이드
+└── res/                   # 위협 피드 원천 데이터 (Text 파일)
+    ├── ip-addresses.txt         # IP 목록
+    ├── domain-names.txt         # Domain 필터용 DNS 목록
+    ├── mac-addresses.txt        # MAC 주소 목록
+    ├── malware-hashes.txt       # 악성코드 파일 해시 목록
+    └── fortiguard-categories.txt # Web Filter용 URL 목록
+
 ```
 
-## 1. 실행
+---
 
-### 
-``` bash
-docker run -d --name threat-prod -p 외부포트:80 jonathan434/threat-feed-api
+## 🚀 실행 가이드
+
+### 1. 데이터 반영 및 빌드
+
+`res/` 디렉터리의 파일을 수정한 후 아래 명령어로 이미지를 빌드하여 데이터를 반영합니다.
+
+```bash
+docker build . -t [이미지명]
+
 ```
 
-## 2. API
-- `GET /` : test.txt 반환
+### 2. 컨테이너 실행
+
+```bash
+docker run -d \
+  -p [포트]:80 \
+  [이미지명] 
+```
+
+---
+
+## 📋 API 리소스 명세
+
+모든 리소스는 `text/plain` 형식으로 반환됩니다. FortiGate External Connector 설정 시 아래 URL을 사용하세요.
+
+| Endpoint (GET) | 설명 | 데이터 예시 |
+| --- | --- | --- |
+| `/feeds/ip-addresses` | 차단 대상 IP 목록 | `8.8.8.8`, `1.1.1.1` |
+| `/feeds/domain-names` | 위협 도메인 및 URL | `google.com`, `*.tistory.com/*` |
+| `/feeds/mac-addresses` | 차단 대상 MAC 주소 | `01:01:01:01:01:01` |
+| `/feeds/malware-hashes` | 악성코드 파일 해시 | `MD5`, `SHA256` |
+| `/feeds/fortiguard-categories` | 커스텀 웹 필터 카테고리 | `https://codingpracticing.tistory.com/*` |
+| `/docs` | API 자동 문서화 (Swagger) | - |
+
+---
+
+## 🔗 참고 자료
+
+* [FortiOS 7.6.6 - External Feeds](https://docs.fortinet.com/document/fortigate/7.6.6/administration-guide/9463)
