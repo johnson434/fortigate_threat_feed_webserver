@@ -23,7 +23,7 @@ COPY main.py .
 RUN mkdir -p res
 
 # 7. res 파일 복사
-COPY res/test.txt res/test.txt 
+COPY res/*.txt res/
 
 EXPOSE 80
 
